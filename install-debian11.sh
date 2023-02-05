@@ -7,5 +7,5 @@ apt-get update
 # Get PHP 8.2
 apt-get -y install php8.2 php8.2-xml
 # Get Logic Installer
-wget https://www.github.com/Vocalogic/logic-installer/builds/logic-installer
+wget https://github.com/Vocalogic/logic-installer/blob/master/builds/logic-installer
 ./logic-installer install
