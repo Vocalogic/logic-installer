@@ -2,7 +2,9 @@
 
 namespace App\Commands;
 
+use App\Enums\SupportedDistro;
 use App\Operations\InitialQuestions;
+use Exception;
 use Illuminate\Console\Scheduling\Schedule;
 use LaravelZero\Framework\Commands\Command;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -30,7 +32,10 @@ class InstallCommand extends Command
     public string $installerVersion = '1.0.0';
     public string $systemUser;
     public array $systemArch;
-
+    public ?string $sudoPassword;
+    public ?string $hostname;
+    public ?int $installationMethod;
+    public string $databasePassword;
 
 
 
@@ -45,6 +50,23 @@ class InstallCommand extends Command
     {
         // Gather Initial Questions from the User
         (new InitialQuestions($this))->run();
+        $distro = $this->systemArch['Distro'];
+        $distro = SupportedDistro::tryFrom($distro);
+        if (!$distro)
+        {
+            $this->die("Distribution not Supported");
+        }
+        $base = $distro->getRoot();
+        $base = "\\App\\Operations\\Distros\\$base\\";
+
+        // Install Base Packages
+        $next = $base . "InstallBase";
+        (new $next($this))->run();
+
+
+
+
+
     }
 
     /**
@@ -63,7 +85,7 @@ class InstallCommand extends Command
      * Should the command fail a standard exception will be thrown with the message.
      * @param string $command
      * @return string|null
-     * @throws \Exception
+     * @throws Exception
      */
     public function exe(string $command) : ?string
     {
@@ -75,7 +97,7 @@ class InstallCommand extends Command
         }
         else
         {
-            throw new \Exception($cmd->getErrorOutput());
+            throw new Exception($cmd->getErrorOutput());
         }
         return null;
 
@@ -118,6 +140,17 @@ class InstallCommand extends Command
         return null;
     }
 
+    /**
+     * This will attempt to execute a command as the sudo user.
+     * @param string $string
+     * @return string|null
+     * @throws Exception
+     */
+    public function exeSudo(string $string) : ?string
+    {
+        $sudo = $this->sudoPassword;
+        return $this->exe("echo \"$sudo\" | sudo -S $string");
+    }
 
 
 }

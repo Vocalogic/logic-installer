@@ -34,7 +34,11 @@ class InitialQuestions
         $this->checkForRoot();
         // Check Operating System
         $this->checkOS();
-
+        // Obtain Sudo Password for installing
+        $this->getSudoPassword();
+        $this->getHostname();
+        // Show Menu for Installation Instructions.
+        $this->getDesiredInstallationMethod();
 
 
     }
@@ -79,5 +83,73 @@ class InitialQuestions
         }
         $this->command->info(sprintf("%s Release %s is supported by this installer.",
             $this->command->systemArch['Distro'], $this->command->systemArch['Release']));
+    }
+
+    /**
+     * Ask user for the sudo password so that we can execute things as root.
+     * @return void
+     */
+    private function getSudoPassword(): void
+    {
+        $this->command->alert("The installer requires your sudo password for the root user to verify you have " .
+            "the correct packages installed and to perform system commands to set up your webserver.");
+        $this->command->sudoPassword = $this->command->ask("Enter sudo password");
+        if (!$this->command->sudoPassword)
+        {
+            $this->command->warn("No sudo password was given. Only application installation process will be attempted.");
+            return;
+        }
+        // Try sudo password
+        try
+        {
+            $this->command->exeSudo("whoami");
+        } catch (Exception)
+        {
+            $this->command->error("SUDO Password appears to be invalid or user not found in sudoers. Please try again.");
+            $this->getSudoPassword();
+        }
+    }
+
+    /**
+     * Set our installation method that the user is requiring.
+     * @return void
+     */
+    private function getDesiredInstallationMethod() : void
+    {
+        $method = $this->command->menu("Logic Installation Method", [
+            'Install Webserver and Logic from a Fresh Installation',
+            'Install Logic Software Only',
+        ])->open();
+        $this->command->installationMethod = $method;
+        if ($method === null)
+        {
+            $this->command->die("Installation Aborted.");
+        }
+        if ($method === 0)
+        {
+            $distro = $this->command->systemArch['Distro'];
+            $resp = $this->command->confirm("Continue with Installation on a brand new $distro installation?");
+            if (!$resp)
+            {
+                $this->command->die("Installation Aborted.");
+            }
+        }
+    }
+
+    /**
+     * Get hostname for configuring NGINX
+     * @return void
+     */
+    private function getHostname()
+    {
+        $this->command->alert("Configuring your Domain");
+        $this->command->info("The hostname you enter here will be used for configuring your webserver.");
+        $this->command->info("You should add a DNS (A Record) for this domain to point to this server's IP.");
+        $this->command->hostname = $this->command->ask("Enter Domain for Logic");
+        if (!$this->command->hostname)
+        {
+            $this->command->error("You must specify a domain for configuring your webserver.");
+            $this->getHostname();
+        }
     }
 }
