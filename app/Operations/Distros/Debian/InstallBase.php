@@ -232,6 +232,6 @@ EOF;
     private function setupCron() : void
     {
         $this->command->info("Setting up system cron for Scheduling Engine..");
-        $this->command->exe("echo '* * * * * cd /home/{$this->command->systemUser}/logic; php artisan schedule:run > /dev/null 2&>1' | crontab -u {$this->command->systemUser} -");
+        $this->command->exe("echo '* * * * * cd /home/{$this->command->systemUser}/logic; php artisan schedule:run' | crontab -u {$this->command->systemUser} -");
     }
 }
