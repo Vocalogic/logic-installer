@@ -90,6 +90,7 @@ class InstallCommand extends Command
     public function exe(string $command) : ?string
     {
         $cmd = Process::fromShellCommandline($command);
+        $cmd->setTimeout(900);
         $cmd->run();
         if ($cmd->isSuccessful())
         {
